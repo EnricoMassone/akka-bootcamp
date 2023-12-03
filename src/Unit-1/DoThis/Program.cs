@@ -5,14 +5,15 @@ namespace WinTail
 {
   public static class Program
   {
+    private const string ActorSystemName = "my-actor-system";
     private const string WriterActorName = "console-writer";
     private const string ReaderActorName = "console-reader";
 
-    private static ActorSystem MyActorSystem;
+    private static ActorSystem? MyActorSystem;
 
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-      MyActorSystem = ActorSystem.Create(nameof(MyActorSystem));
+      MyActorSystem = ActorSystem.Create(ActorSystemName);
 
       PrintInstructions();
 
