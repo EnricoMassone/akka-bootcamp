@@ -2,5 +2,5 @@
 
 namespace WinTail.Messages
 {
-  public sealed record StartTailFile(string FilePath, IActorRef FileEventsProcessor);
+  public sealed record StartTailFile(string FilePath, IActorRef FileEventsProcessorActor);
 }
