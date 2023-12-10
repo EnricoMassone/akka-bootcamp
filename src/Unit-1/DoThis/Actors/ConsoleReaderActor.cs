@@ -2,7 +2,7 @@ using Akka.Actor;
 using System;
 using WinTail.Messages;
 
-namespace WinTail
+namespace WinTail.Actors
 {
   /// <summary>
   /// Actor responsible for reading FROM the console.
@@ -13,11 +13,11 @@ namespace WinTail
     public const string StartReadingCommand = "start";
     private const string ExitCommand = "exit";
 
-    private readonly IActorRef _consoleWriterActor;
+    private readonly IActorRef _validationActor;
 
-    public ConsoleReaderActor(IActorRef consoleWriterActor)
+    public ConsoleReaderActor(IActorRef validationActor)
     {
-      _consoleWriterActor = consoleWriterActor ?? throw new ArgumentNullException(nameof(consoleWriterActor));
+      _validationActor = validationActor ?? throw new ArgumentNullException(nameof(validationActor));
     }
 
     protected override void OnReceive(object message)
@@ -31,14 +31,6 @@ namespace WinTail
       if (Equals(message, StartReadingCommand))
       {
         PrintInstructions();
-      }
-      else if (message is InputError inputError)
-      {
-        _consoleWriterActor.Tell(inputError);
-      }
-      else if (message is InputSuccess inputSuccess)
-      {
-        _consoleWriterActor.Tell(inputSuccess);
       }
 
       ReadUserInputFromConsole();
@@ -58,28 +50,13 @@ namespace WinTail
     {
       var userInput = Console.ReadLine();
 
-      if (string.IsNullOrWhiteSpace(userInput))
-      {
-        this.Self.Tell(new NullInputError());
-        return;
-      }
-
       if (string.Equals(userInput, ExitCommand, StringComparison.OrdinalIgnoreCase))
       {
         this.Self.Tell(new ShutdownActorSystem());
         return;
       }
 
-      if (IsValidUserInput(userInput))
-      {
-        this.Self.Tell(new InputSuccess($"Valid input was provided: {userInput}"));
-      }
-      else
-      {
-        this.Self.Tell(new ValidationInputError("Invalid input: the provided input contains an odd number of characters"));
-      }
-
-      static bool IsValidUserInput(string input) => input.Length % 2 == 0;
+      _validationActor.Tell(new ConsoleInput(userInput));
     }
   }
 }
