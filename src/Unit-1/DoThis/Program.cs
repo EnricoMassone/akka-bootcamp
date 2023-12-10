@@ -21,7 +21,7 @@ namespace WinTail
         WriterActorName);
 
       var validationActor = MyActorSystem.ActorOf(
-        Props.Create(() => new ValidationActor(consoleWriterActor)),
+        Props.Create(() => new FileValidationActor(consoleWriterActor)),
         ValidationActorName
       );
 

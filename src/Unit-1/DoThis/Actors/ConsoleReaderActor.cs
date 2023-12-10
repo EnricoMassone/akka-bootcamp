@@ -38,8 +38,7 @@ namespace WinTail.Actors
 
     private static void PrintInstructions()
     {
-      Console.WriteLine("Write whatever you want into the console!");
-      Console.WriteLine("Some entries will pass validation and some won't...");
+      Console.WriteLine("Please provide the URI to a log file on your local computer.");
       Console.WriteLine();
       Console.WriteLine();
       Console.WriteLine("Type 'exit' to quit this application at any time.");
