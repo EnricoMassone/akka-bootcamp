@@ -9,8 +9,6 @@ namespace WinTail.Services
   public sealed class FileChangesPublisher : IPublisher<FileChangeInfo, FileErrorInfo>, IDisposable
   {
     private readonly List<ISubscriber<FileChangeInfo, FileErrorInfo>> _subscribers;
-    private readonly string _directoryName;
-    private readonly string _fileName;
     private readonly string _fileFullPath;
     private readonly FileSystemWatcher _watcher;
 
@@ -23,9 +21,10 @@ namespace WinTail.Services
 
       _subscribers = new List<ISubscriber<FileChangeInfo, FileErrorInfo>>();
       _fileFullPath = fileFullPath;
-      _fileName = Path.GetFileName(fileFullPath);
-      _directoryName = Path.GetDirectoryName(fileFullPath)!;
-      _watcher = new FileSystemWatcher(_directoryName, _fileName);
+      _watcher = BuildFileSystemWatcher(
+        fileFullPath,
+        OnFileChange,
+        OnFileError);
 
       static bool IsValidFileFullPath(string path)
       {
@@ -49,9 +48,28 @@ namespace WinTail.Services
 
       static InvalidFileFullPathException NewInvalidFileFullPathException(string path) =>
         new($"'{path}' is not a valid file full path");
+
+      static FileSystemWatcher BuildFileSystemWatcher(
+        string fileFullPath,
+        FileSystemEventHandler onFileChange,
+        ErrorEventHandler onError)
+      {
+        var fileName = Path.GetFileName(fileFullPath);
+        var directoryName = Path.GetDirectoryName(fileFullPath)!;
+
+        var watcher = new FileSystemWatcher(directoryName, fileName)
+        {
+          NotifyFilter = NotifyFilters.LastWrite,
+        };
+
+        watcher.Changed += onFileChange;
+        watcher.Error += onError;
+
+        return watcher;
+      }
     }
 
-    private void OnFileChange(FileSystemEventArgs args)
+    private void OnFileChange(object sender, FileSystemEventArgs args)
     {
       if (args.ChangeType != WatcherChangeTypes.Changed)
       {
@@ -64,7 +82,7 @@ namespace WinTail.Services
       }
     }
 
-    private void OnFileError(ErrorEventArgs args)
+    private void OnFileError(object sender, ErrorEventArgs args)
     {
       var exception = args.GetException();
 
