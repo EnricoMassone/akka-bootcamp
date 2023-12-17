@@ -9,10 +9,10 @@ namespace WinTail.Actors
     {
       if (message is StartTailFile startTailFile)
       {
-        var (filePath, fileEventsProcessorActor) = startTailFile;
+        var (filePath, reporterActor) = startTailFile;
 
         Context.ActorOf(
-          Props.Create(() => new TailActor(filePath, fileEventsProcessorActor)),
+          Props.Create(() => new TailActor(filePath, reporterActor)),
           BuildTailActorName(filePath)
         );
       }
