@@ -69,6 +69,30 @@ namespace WinTail.Services
       }
     }
 
+    public void Start()
+    {
+      _watcher.EnableRaisingEvents = true;
+    }
+
+    public void Stop()
+    {
+      _watcher.EnableRaisingEvents = false;
+    }
+
+    public IDisposable Subscribe(ISubscriber<FileChangeInfo, FileErrorInfo> subscriber)
+    {
+      ArgumentNullException.ThrowIfNull(subscriber);
+
+      if (!_subscribers.Contains(subscriber))
+      {
+        _subscribers.Add(subscriber);
+      }
+
+      return new Subscription<FileChangeInfo, FileErrorInfo>(_subscribers, subscriber);
+    }
+
+    public void Dispose() => _watcher.Dispose();
+
     private void OnFileChange(object sender, FileSystemEventArgs args)
     {
       if (args.ChangeType != WatcherChangeTypes.Changed)
@@ -91,19 +115,5 @@ namespace WinTail.Services
         subscriber.OnError(new FileErrorInfo(_fileFullPath, exception));
       }
     }
-
-    public IDisposable Subscribe(ISubscriber<FileChangeInfo, FileErrorInfo> subscriber)
-    {
-      ArgumentNullException.ThrowIfNull(subscriber);
-
-      if (!_subscribers.Contains(subscriber))
-      {
-        _subscribers.Add(subscriber);
-      }
-
-      return new Subscription<FileChangeInfo, FileErrorInfo>(_subscribers, subscriber);
-    }
-
-    public void Dispose() => _watcher.Dispose();
   }
 }
