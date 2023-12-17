@@ -2,21 +2,18 @@
 using System;
 using System.IO;
 using WinTail.Messages;
-using WinTail.Models;
 using WinTail.Services;
 
 namespace WinTail.Actors
 {
   public sealed class TailActor :
     UntypedActor,
-    IDisposable,
-    ISubscriber<FileChangeInfo, FileErrorInfo>
+    IDisposable
   {
     private readonly IActorRef _reporterActor;
     private readonly Stream _fileStream;
     private readonly StreamReader _fileReader;
-    private readonly FileChangesPublisher _fileChangesPublisher;
-    private readonly IDisposable _subscription;
+    private readonly FileObserver _fileObserver;
 
     public TailActor(
       string filePath,
@@ -34,9 +31,8 @@ namespace WinTail.Actors
 
       var fileFullPath = Path.GetFullPath(filePath);
 
-      _fileChangesPublisher = new FileChangesPublisher(fileFullPath);
-      _subscription = _fileChangesPublisher.Subscribe(this);
-      _fileChangesPublisher.Start();
+      _fileObserver = new FileObserver(fileFullPath, this.Self);
+      _fileObserver.Start();
 
       _fileStream = File.Open(fileFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
       _fileReader = new StreamReader(_fileStream);
@@ -64,25 +60,10 @@ namespace WinTail.Actors
       }
     }
 
-    public void OnError(FileErrorInfo errorInfo)
-    {
-      ArgumentNullException.ThrowIfNull(errorInfo);
-
-      this.Self.Tell(new FileError(errorInfo.FullPath, errorInfo.Exception.Message));
-    }
-
-    public void OnValue(FileChangeInfo value)
-    {
-      ArgumentNullException.ThrowIfNull(value);
-
-      this.Self.Tell(new FileWritten(value.FullPath));
-    }
-
     public void Dispose()
     {
       // dispose subscription and publisher
-      _subscription.Dispose();
-      _fileChangesPublisher.Dispose();
+      _fileObserver.Dispose();
 
       // dispose stream reader and stream
       _fileReader.Dispose();

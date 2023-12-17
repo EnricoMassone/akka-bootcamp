@@ -1,25 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Akka.Actor;
+using System;
 using System.IO;
 using WinTail.Exceptions;
-using WinTail.Models;
+using WinTail.Messages;
 
 namespace WinTail.Services
 {
-  public sealed class FileChangesPublisher : IPublisher<FileChangeInfo, FileErrorInfo>, IDisposable
+  public sealed class FileObserver : IDisposable
   {
-    private readonly List<ISubscriber<FileChangeInfo, FileErrorInfo>> _subscribers;
     private readonly string _fileFullPath;
     private readonly FileSystemWatcher _watcher;
+    private readonly IActorRef _tailActor;
 
-    public FileChangesPublisher(string fileFullPath)
+    public FileObserver(string fileFullPath, IActorRef tailActor)
     {
       if (!IsValidFileFullPath(fileFullPath))
       {
         throw NewInvalidFileFullPathException(fileFullPath);
       }
 
-      _subscribers = new List<ISubscriber<FileChangeInfo, FileErrorInfo>>();
+      _tailActor = tailActor ?? throw new ArgumentNullException(nameof(tailActor));
       _fileFullPath = fileFullPath;
       _watcher = BuildFileSystemWatcher(
         fileFullPath,
@@ -79,18 +79,6 @@ namespace WinTail.Services
       _watcher.EnableRaisingEvents = false;
     }
 
-    public IDisposable Subscribe(ISubscriber<FileChangeInfo, FileErrorInfo> subscriber)
-    {
-      ArgumentNullException.ThrowIfNull(subscriber);
-
-      if (!_subscribers.Contains(subscriber))
-      {
-        _subscribers.Add(subscriber);
-      }
-
-      return new Subscription<FileChangeInfo, FileErrorInfo>(_subscribers, subscriber);
-    }
-
     public void Dispose() => _watcher.Dispose();
 
     private void OnFileChange(object sender, FileSystemEventArgs args)
@@ -100,20 +88,13 @@ namespace WinTail.Services
         return;
       }
 
-      foreach (var subscriber in _subscribers)
-      {
-        subscriber.OnValue(new FileChangeInfo(args.FullPath));
-      }
+      _tailActor.Tell(new FileWritten(args.FullPath), ActorRefs.NoSender);
     }
 
     private void OnFileError(object sender, ErrorEventArgs args)
     {
       var exception = args.GetException();
-
-      foreach (var subscriber in _subscribers)
-      {
-        subscriber.OnError(new FileErrorInfo(_fileFullPath, exception));
-      }
+      _tailActor.Tell(new FileError(_fileFullPath, exception.Message), ActorRefs.NoSender);
     }
   }
 }

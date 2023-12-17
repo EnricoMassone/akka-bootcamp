@@ -10,16 +10,18 @@ namespace WinTail.Actors
   /// </summary>
   public sealed class ConsoleWriterActor : UntypedActor
   {
+    private const bool AppendNewline = true;
+
     protected override void OnReceive(object message)
     {
       switch (message)
       {
         case InputSuccess inputSuccess:
-          PrintMessage(inputSuccess.Message, ConsoleColor.Green);
+          PrintMessage(inputSuccess.Message, ConsoleColor.Green, AppendNewline);
           break;
 
         case InputError inputError:
-          PrintMessage(inputError.Reason, ConsoleColor.Red);
+          PrintMessage(inputError.Reason, ConsoleColor.Red, AppendNewline);
           break;
 
         default:
@@ -28,11 +30,22 @@ namespace WinTail.Actors
       }
     }
 
-    private static void PrintMessage(string? message, ConsoleColor consoleColor = ConsoleColor.White)
+    private static void PrintMessage(
+      string? message,
+      ConsoleColor consoleColor = ConsoleColor.White,
+      bool appendNewline = false)
     {
       Console.ForegroundColor = consoleColor;
-      Console.WriteLine(message);
-      Console.WriteLine();
+
+      if (appendNewline)
+      {
+        Console.WriteLine(message);
+      }
+      else
+      {
+        Console.Write(message);
+      }
+
       Console.ResetColor();
     }
   }
