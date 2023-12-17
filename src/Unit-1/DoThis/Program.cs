@@ -9,6 +9,7 @@ namespace WinTail
     private const string WriterActorName = "console-writer";
     private const string ValidationActorName = "validation-actor";
     private const string ReaderActorName = "console-reader";
+    private const string TailCoordinatorActorName = "tail-coordinator-actor";
 
     private static ActorSystem? MyActorSystem;
 
@@ -20,8 +21,13 @@ namespace WinTail
         Props.Create(() => new ConsoleWriterActor()),
         WriterActorName);
 
+      var tailCoordinatorActor = MyActorSystem.ActorOf(
+        Props.Create(() => new TailCoordinatorActor()),
+        TailCoordinatorActorName
+      );
+
       var validationActor = MyActorSystem.ActorOf(
-        Props.Create(() => new FileValidationActor(consoleWriterActor)),
+        Props.Create(() => new FileValidationActor(consoleWriterActor, tailCoordinatorActor)),
         ValidationActorName
       );
 

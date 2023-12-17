@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using System;
 using WinTail.Messages;
 
 namespace WinTail.Actors
@@ -17,7 +18,7 @@ namespace WinTail.Actors
         );
       }
 
-      static string BuildTailActorName(string filePath) => $"{filePath} tail actor";
+      static string BuildTailActorName(string filePath) => Uri.EscapeDataString($"{filePath} tail actor");
     }
   }
 }

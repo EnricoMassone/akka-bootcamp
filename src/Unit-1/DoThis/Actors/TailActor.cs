@@ -66,12 +66,16 @@ namespace WinTail.Actors
 
     public void OnError(FileErrorInfo errorInfo)
     {
-      throw new NotImplementedException();
+      ArgumentNullException.ThrowIfNull(errorInfo);
+
+      this.Self.Tell(new FileError(errorInfo.FullPath, errorInfo.Exception.Message));
     }
 
     public void OnValue(FileChangeInfo value)
     {
-      throw new NotImplementedException();
+      ArgumentNullException.ThrowIfNull(value);
+
+      this.Self.Tell(new FileWritten(value.FullPath));
     }
 
     public void Dispose()

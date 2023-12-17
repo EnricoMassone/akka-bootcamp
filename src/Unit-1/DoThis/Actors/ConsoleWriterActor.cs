@@ -28,7 +28,7 @@ namespace WinTail.Actors
       }
     }
 
-    private static void PrintMessage(string? message, ConsoleColor consoleColor = ConsoleColor.Black)
+    private static void PrintMessage(string? message, ConsoleColor consoleColor = ConsoleColor.White)
     {
       Console.ForegroundColor = consoleColor;
       Console.WriteLine(message);
